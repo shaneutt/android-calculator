@@ -20,4 +20,14 @@ public class ShanesCalculatorTest {
     public void testOnOptionsItemSelected() throws Exception {
 
     }
+
+    @Test
+    public void testReconcileStack() throws Exception {
+
+    }
+
+    @Test
+    public void testUpdateDisplay() throws Exception {
+
+    }
 }
