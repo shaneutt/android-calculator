@@ -168,9 +168,7 @@ public class ShanesCalculator extends AppCompatActivity {
         }
     }
 
-    private void updateDisplay() {
-        updateDisplay(true);
-    }
+    private void updateDisplay() { updateDisplay(true); }
 
     private void updateDisplay(Boolean clearDisplay) {
         if (usingDecimal) {
