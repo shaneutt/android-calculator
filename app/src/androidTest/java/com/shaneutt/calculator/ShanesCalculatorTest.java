@@ -1,33 +1,18 @@
 package com.shaneutt.calculator;
 
-import org.junit.Test;
+import junit.framework.TestCase;
 
-import static org.junit.Assert.*;
+public class ShanesCalculatorTest extends TestCase {
 
-public class ShanesCalculatorTest {
-
-    @Test
     public void testOnCreate() throws Exception {
 
     }
 
-    @Test
     public void testOnCreateOptionsMenu() throws Exception {
 
     }
 
-    @Test
     public void testOnOptionsItemSelected() throws Exception {
-
-    }
-
-    @Test
-    public void testReconcileStack() throws Exception {
-
-    }
-
-    @Test
-    public void testUpdateDisplay() throws Exception {
 
     }
 }
