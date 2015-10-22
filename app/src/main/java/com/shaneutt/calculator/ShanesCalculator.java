@@ -8,12 +8,14 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.Toast;
 
 public class ShanesCalculator extends AppCompatActivity {
     private Boolean  usingDecimal;  // are we using a decimal?
     private Double   storedValue;   // store values to be used in mathematical operations
-    private EditText mainDisplay;   // the main area for calculation input and output
     private String   lastOperation; // the previous mathematical operation used
+    private EditText mainDisplay;   // the main area for calculation input and output
+    private Toast    toaster;       // don't forget the butter
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -25,11 +27,12 @@ public class ShanesCalculator extends AppCompatActivity {
         lastOperation = null;
         storedValue   = (double) 0;
         usingDecimal  = false;
+        toaster       = Toast.makeText(this, null, Toast.LENGTH_LONG);
         ////////////////////////////
         // Initialize mainDisplay //
         ////////////////////////////
         mainDisplay = (EditText) findViewById(R.id.mainDisplay);
-        mainDisplay.setText("0");
+        mainDisplay.setText(null);
         ///////////////////////////////
         // Initialize Number Buttons //
         ///////////////////////////////
@@ -37,18 +40,16 @@ public class ShanesCalculator extends AppCompatActivity {
         for (int i = 0; i < 10; i++) {
             int buttonID = resources.getIdentifier("button" + i, "id", this.getBaseContext().getPackageName());
             Button numberButton = (Button) findViewById(buttonID);
-            final int finalI = i;
+            final Integer currentNumber = i;
             numberButton.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    // add to the existing number in the mainDisplay
-                    String currentValue = mainDisplay.getText().toString();
-                    Double newValue = Double.valueOf(currentValue + finalI);
+                    // append the existing number to the mainDisplay
                     if (usingDecimal) {
-                        mainDisplay.setText(newValue.toString());
+                        mainDisplay.append(currentNumber.toString());
                     } else {
-                        Integer newValueInteger = newValue.intValue();
-                        mainDisplay.setText(newValueInteger.toString());
+                        Integer newValueInteger = currentNumber.intValue();
+                        mainDisplay.append(newValueInteger.toString());
                     }
                 }
             });
@@ -88,20 +89,13 @@ public class ShanesCalculator extends AppCompatActivity {
                 storedValue   = null;
             }
         });
-        Button clear = (Button) findViewById(R.id.buttonClear);
-        clear.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                mainDisplay.setHint(null);
-                mainDisplay.setText("0");
-            }
-        });
         Button clearEverything = (Button) findViewById(R.id.buttonClearEverything);
         clearEverything.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                // wipe everything out
                 mainDisplay.setHint(null);
-                mainDisplay.setText("0");
+                mainDisplay.setText(null);
                 lastOperation = null;
                 storedValue   = null;
             }
@@ -110,7 +104,13 @@ public class ShanesCalculator extends AppCompatActivity {
         decimal.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                // TODO: implement using decimals
+                // place a decimal unless one is already placed
+                if (mainDisplay.getText().toString().contains(".")) {
+                    toaster.setText("a decimal is already placed");
+                    toaster.show();
+                } else {
+                    mainDisplay.append(".");
+                }
             }
         });
     }
@@ -137,12 +137,13 @@ public class ShanesCalculator extends AppCompatActivity {
 
     private void reconcileStack() {
         String currentValueString = mainDisplay.getText().toString();
-        // protect again empty display issues
-        if (currentValueString.length() < 1) {
-            currentValueString = "0";
+        // protect against issues where the display is empty or invalid
+        if (currentValueString.length() < 1 || currentValueString == ".") {
+            return;
         }
+        // determine the current value as a double
         Double currentValue = Double.valueOf(currentValueString);
-        if (lastOperation != null) {
+        if (lastOperation != null && storedValue != null) {
             // if we had a previous operation on the stack, use it to get a new total
             Double Total;
             switch (lastOperation) {
@@ -157,6 +158,15 @@ public class ShanesCalculator extends AppCompatActivity {
                     break;
                 case "Division":
                     Total = storedValue / currentValue;
+                    if (Total.isInfinite()) {
+                        // for some reason java Double thinks dividing by zero equals infinite :(
+                        Toast.makeText(this, "ILLEGAL DIVISION BY ZERO", Toast.LENGTH_LONG).show();
+                        mainDisplay.setHint(null);
+                        mainDisplay.setText(null);
+                        lastOperation = null;
+                        storedValue   = 0.00;
+                        return;
+                    }
                     break;
                 default:
                     return;
@@ -170,22 +180,37 @@ public class ShanesCalculator extends AppCompatActivity {
 
     private void updateDisplay() { updateDisplay(true); }
 
-    private void updateDisplay(Boolean clearDisplay) {
-        if (usingDecimal) {
-            if (clearDisplay) {
-                mainDisplay.setHint(storedValue.toString());
-                mainDisplay.setText(null);
-            } else {
-                mainDisplay.setText(storedValue.toString());
-            }
+    private void updateDisplay(boolean clearText) {
+        // bail out if theres nothing stored
+        if (storedValue == null) return;
+        // test if we should be displaying in decimal or not
+        String newText = new String();
+        if (usingDecimal()) {
+            newText = storedValue.toString();
         } else {
-            Integer storedValueInteger = storedValue.intValue();
-            if (clearDisplay) {
-                mainDisplay.setHint(storedValueInteger.toString());
-                mainDisplay.setText(null);
-            } else {
-                mainDisplay.setText(storedValueInteger.toString());
-            }
+            Integer newNum = storedValue.intValue();
+            newText = newNum.toString();
+        }
+        String newHint = null;
+        if (clearText) {
+            // clearing the text means add a hint that there's a number on the stack but
+            // allow the user to input a new set of numbers
+            newHint = newText.toString();
+            newText = null;
+        }
+        updateDisplay(newHint, newText);
+    }
+
+    private void updateDisplay(String newHint, String newText) {
+        mainDisplay.setHint(newHint);
+        mainDisplay.setText(newText);
+    }
+
+    private boolean usingDecimal() {
+        if (storedValue % 1 == 0) {
+            return false;
+        } else {
+            return true;
         }
     }
 }
